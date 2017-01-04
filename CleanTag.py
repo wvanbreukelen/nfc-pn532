@@ -7,11 +7,11 @@ import time
 try:
     import Adafruit_PN532 as PN532
 except Exception:
-    print("PN523 library niet gevonden!")
+    print("PN532 library niet gevonden!")
     sys.exit()
 
 # Te legen datablocks
-emptyDatablocks = [1]
+emptyDatablocks = {1: 'ID'}
 
 # Elke NFC tag bestaat uit verschillende sectoren (in ons geval 16) waarin een bepaalde hoeveelheid data in opgeslagen kan worden.
 # Om de data te kunnen lezen/schrijven is er een unieke sleutel nodig. Standaard staat deze sleutel op zes FF bytes
@@ -43,19 +43,32 @@ while True:
         print("NFC tag gevonden! Verplaats deze niet...")
         break
 
-time.sleep(1)
+# Tijd toevoegen zodat de tag juist geplaatst kan worden.
+time.sleep(2)
 
 # Maak leeg datapakket
-data = bytearray(16)
+emptyPacket = bytearray(16)
 
-
-for block in emptyDatablocks:
+for block, prefix in emptyDatablocks.items():
     # Gebruik sleutel om datasector vrij te geven voor schrijven
     if not ctl.mifare_classic_authenticate_block(t_id, block, PN532.MIFARE_CMD_AUTH_B, ConfigReader.GetTagKey()):
         print('Fout! Kan niet authoriseren met NFC tag op block {0}. Probeer het nog eens.'.format(block))
         sys.exit(0)
 
-    # Leeg NFC block
-    ctl.mifare_classic_write_block(block, data);
+    # Haal actuele data van het blok op
+    data = ctl.mifare_classic_read_block(block)
+
+    # Bepaal de (waarschijnlijke) prefix van het datablock
+    dataPrefix = data[0:len(prefix)]
+
+    # Vergelijk de prefix van het actuele datablock met de gevraagde prefix.
+    # Komt deze niet overeen, sla het block over. Dit om te verkomen dat er bijvoorbeeld een lege sleutel wordt aangemaakt. Het gevolg is een gedeeltelijk corrupt geheugen
+    # van de NFC tag.
+    if dataPrefix != prefix:
+        print('Overslaan, prefix van tag om op block {0} niet overeen met gevraagde prefix "{1}"'.format(block, prefix))
+        continue
+
+    # Schrijf block vol met lege bytearray
+    ctl.mifare_classic_write_block(block, emptyPacket);
 
 print('NFC tag schoongemaakt!')
