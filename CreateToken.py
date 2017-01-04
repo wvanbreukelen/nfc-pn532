@@ -1,5 +1,6 @@
 import sys, time
 import ConfigReader
+import NFC
 
 # NFC Python library voor PN532 microcontroller importeren
 # Bron: https://github.com/adafruit/Adafruit_Python_PN532/
@@ -17,6 +18,9 @@ writeDatablocks = {1: 'ID'}
 
 GPIO_CF = ConfigReader.GetGPIOConfig()
 
+# Sleutel ophalen
+key = ConfigReader.GetTagKey()
+
 # Nieuwe instantie aanmaken van de PN532 klasse
 ctl = PN532.PN532(
  cs   = GPIO_CF['CS'],
@@ -25,11 +29,10 @@ ctl = PN532.PN532(
  miso = GPIO_CF['MISO']
 )
 
-# Maak connectie met de PN532 controller
-ctl.begin()
+nfc = NFC.NFC(ctl, key)
 
-# Configuratie instellen op PN532
-ctl.SAM_configuration()
+# Maak connectie met de PN532 controller
+nfc.begin()
 
 while True:
     print("Plaats NFC tag op lezer...")
@@ -37,9 +40,7 @@ while True:
     # Wacht totdat er een NFC tag gevonden is
     while True:
         # Probeer een tag te lezen. Is de lezing succesvol, toon melding
-        t_id = ctl.read_passive_target()
-
-        if t_id != None:
+        if nfc.scan():
             print("NFC tag gevonden! Verplaats deze niet...")
             break
 
@@ -55,38 +56,7 @@ while True:
                 print("Geen nummer, probeer opnieuw!")
                 continue
 
-        # Gebruik sleutel om datasector vrij te geven voor schrijven
-        if not ctl.mifare_classic_authenticate_block(t_id, block, PN532.MIFARE_CMD_AUTH_B, ConfigReader.GetTagKey()):
-            print('Fout! Kan niet authoriseren met NFC tag. Probeer het nog eens.')
-            continue
-
-        # Maak datapakket
-        data = bytearray(16)
-
-        prefixLen = len(prefix)
-
-        # Controleer of header juiste lengte heeft
-        if prefixLen > 3:
-            print('Fout! Prefix "{0}" is te lang'.format(prefix))
-
-        # Header toevoegen aan eerste twee bytes. Op deze manier weten we dat deze rij het ID van de tag bevat
-        data[0:prefixLen] = str.encode(prefix)
-
-        # Zet integer om naar hexidecimaal
-        tag_id = format(choice, 'x')
-
-        # Voeg nullen toe zodat de totale lengte op zes bytes komt
-        while (len(tag_id) < 6):
-            tag_id = '0' + tag_id
-
-        data[2:8] = tag_id
-
-        print(data)
-
-        # Schrijf data naar tag op block 1
-        if not ctl.mifare_classic_write_block(1, data):
-            print('Fout! Kan niet naar tag schrijven. Probeer het nog eens.')
-            continue
+        nfc.write(block, prefix, choice)
 
     print('Tag geschreven!')
 
