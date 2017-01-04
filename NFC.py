@@ -88,7 +88,7 @@ class NFC:
         data[2:8] = tag_id
 
         # Schrijf data naar tag op block 1
-        if not self.ctl.mifare_classic_write_block(1, data):
+        if not self.ctl.mifare_classic_write_block(block, data):
             raise NFCWriteError('Cannot write to NFC tag.')
 
     def clean(self, block, prefix):

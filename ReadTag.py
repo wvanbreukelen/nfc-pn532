@@ -20,7 +20,7 @@ readDatablocks = {1: 'ID'}
 GPIO_CF = ConfigReader.GetGPIOConfig()
 
 # Sleutel ophalen
-key  = ConfigReader.GetTagKey()
+key = ConfigReader.GetTagKey()
 
 # Nieuwe instantie aanmaken van de PN532 klasse
 ctl = PN532.PN532(
