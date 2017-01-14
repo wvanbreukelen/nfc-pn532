@@ -11,7 +11,7 @@ except Exception:
     sys.exit()
 
 # Te schrijven datablocks en hun bijbehorende prefix
-writeDatablocks = {1: 'ID'}
+writeDatablocks = {1: 'ID', 2: 'BA'}
 
 # Elke NFC tag bestaat uit verschillende sectoren (in ons geval 16) waarin een bepaalde hoeveelheid data in opgeslagen kan worden.
 # Om de data te kunnen lezen/schrijven is er een unieke sleutel nodig. Standaard staat deze sleutel op zes FF bytes
@@ -57,6 +57,8 @@ while True:
                 continue
 
         nfc.write(block, prefix, choice)
+
+        choice = None
 
     print('Tag geschreven!')
 

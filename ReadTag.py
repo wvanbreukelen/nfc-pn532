@@ -12,7 +12,7 @@ except Exception:
     sys.exit()
 
 # Te lezen datablocks en hun bijbehorende prefix
-readDatablocks = {1: 'ID'}
+readDatablocks = {1: 'ID', 2: 'BA'}
 
 # Elke NFC tag bestaat uit verschillende sectoren (in ons geval 16) waarin een bepaalde hoeveelheid data in opgeslagen kan worden.
 # Om de data te kunnen lezen/schrijven is er een unieke sleutel nodig. Standaard staat deze sleutel op zes FF bytes
@@ -51,7 +51,7 @@ while True:
     for block, prefix in readDatablocks.items():
 
         try:
-            print(nfc.read(block, prefix))
+            print(nfc.read(block, prefix, False))
         except Exception as e:
             print('Er is een fout opgetreden: ' + str(e))
 
