@@ -1,4 +1,5 @@
-import sys, time
+import sys
+import time
 import ConfigReader
 import NFC
 
