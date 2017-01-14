@@ -20,7 +20,7 @@ class NFCPrefixMismatch(Exception):
 class NFCWriteError(Exception):
     pass
 
-# Formateerfout
+# Formatteerfout
 class FormatError(Exception):
     pass
 
@@ -41,23 +41,27 @@ class NFC:
 
         return self.tag_id != None
 
-    def read(self, block, prefix):
+    def read(self, block, prefix, forcePrefix = True):
         if not self.authorizeBlock(block):
             raise NFCAuthorizeException('Cannot authorize with NFC tag.')
 
         data = self.ctl.mifare_classic_read_block(block)
 
         if data is None:
-            raise NFCPrefixMismatch('No data available for block {0} with prefix {1}'.format(block, prefix))
+            raise NFCPrefixMismatch('No data available for block {0} with prefix {1}.'.format(block, prefix))
 
         # Controleer of dataveld de juiste prefix header heeft
         if data[0:2] != prefix:
-            raise NFCPrefixMismatch('Prefix from block {0} does not equals with requested prefix "{1}"'.format(block, prefix))
-
+            # Wanneer de prefix aanwezig MOET zijn, throw een Exception
+            # Als dit niet hoeft, stuur de waarde None terug
+            if forcePrefix:
+                raise NFCPrefixMismatch('Prefix from block {0} does not equals with requested prefix "{1}".'.format(block, prefix))
+            else:
+                return {prefix: None}
         try:
             fmtData = int(data[2:8].decode('utf-8'), 16)
         except Exception as e:
-            raise FormatError('Format error on block {0} with data {1}'.format(block, str(data)))
+            raise FormatError('Format error on block {0} with data {1}.'.format(block, str(data)))
 
         return {prefix: fmtData}
 
@@ -69,23 +73,28 @@ class NFC:
         # Maak datapakket
         data = bytearray(16)
 
+        # Lengte bepalen van de gegeven prefix
         prefixLen = len(prefix)
 
         # Controleer of header juiste lengte heeft
-        if prefixLen > 3:
-            raise NFCPrefixMismatch('Prefix {0} is too long.'.format(prefix))
+        if prefixLen != 2:
+            raise NFCPrefixMismatch('Prefix "{0}" on block {1} has length of {2}, expecting 2.'.format(prefix, block, prefixLen))
 
-        # Header toevoegen aan eerste twee bytes. Op deze manier weten we dat deze rij het ID van de tag bevat
-        data[0:prefixLen] = str.encode(prefix)
+        # Prefix header toevoegen aan eerste twee bytes. Op deze manier weten we dat deze rij het ID van de tag bevat
+        data[0:2] = str.encode(prefix)
 
-        # Zet integer om naar hexidecimaal
-        tag_id = format(input, 'x')
+        try:
+            # Zet input om naar hexadecimaal
+            input = format(input, 'x')
+        except Exception as e:
+            raise FormatError('Cannot change input with type {0} to hexadecimal.'.format(type(input)))
 
         # Voeg nullen toe zodat de totale lengte op zes bytes komt
-        while (len(tag_id) < 6):
-            tag_id = '0' + tag_id
+        while (len(input) < 6):
+            input = '0' + input
 
-        data[2:8] = tag_id
+        # Plaats data in bytearray
+        data[2:8] = input
 
         # Schrijf data naar tag op block 1
         if not self.ctl.mifare_classic_write_block(block, data):
@@ -110,6 +119,6 @@ class NFC:
             # Schrijf block vol met lege bytearray
             self.ctl.mifare_classic_write_block(block, bytearray(16));
 
-    # Gebruik sleutel om datasector vrij te geven voor schrijven
+    # Gebruik sleutel om datasector vrij te geven voor schrijven.
     def authorizeBlock(self, block):
         return self.ctl.mifare_classic_authenticate_block(self.tag_id, block, PN532.MIFARE_CMD_AUTH_B, self.key)
