@@ -24,7 +24,7 @@ sudo python ReadTag.py
 
 ### Schrijven
 ```bash
-sudo python CreateToken.py
+sudo python WriteTag.py
 ```
 
 ### Schoonmaken
