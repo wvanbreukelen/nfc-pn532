@@ -12,7 +12,7 @@ except Exception:
     sys.exit()
 
 # Te schrijven datablocks en hun bijbehorende prefix
-writeDatablocks = {1: 'ID', 2: 'BA'}
+writeDatablocks = {1: 'ID'}
 
 # GPIO configuratie ophalen
 GPIO_CF = ConfigReader.GetGPIOConfig()

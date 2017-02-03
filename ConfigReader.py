@@ -1,10 +1,14 @@
 import ConfigParser
+import os
 
 # Haal configuratie uit config.ini op
 def GetGPIOConfig():
     config = ConfigParser.ConfigParser()
 
-    config.read('config.ini')
+    print 'Working Path: {0}'.format(os.getcwd()) 
+
+    # Hardcode locatie naar configuratiebestand
+    config.read('/home/pi/nfc/config.ini')
 
     gpio = {}
 

@@ -146,7 +146,7 @@ class NFC:
             self.ctl.mifare_classic_write_block(block, bytearray(16));
 
     """
-    Autoriseer één datablock om te lezen/schrijven
+    Autoriseer een datablock om te lezen/schrijven
     """
     def authorizeBlock(self, block):
         # Wanneer autorisatie gefaald heeft, stuur false
